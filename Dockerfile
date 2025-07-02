@@ -1,7 +1,10 @@
-# Etapa 1: Imagem base
-FROM node:18-slim
+# Dockerfile completo e funcional
+FROM node:18-bullseye
 
-# Etapa 2: Instalar dependências do sistema necessárias para Chromium
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV NODE_ENV=production
+
+# Instala dependências do Chromium
 RUN apt-get update && apt-get install -y \
   wget \
   ca-certificates \
@@ -20,23 +23,20 @@ RUN apt-get update && apt-get install -y \
   libxdamage1 \
   libxrandr2 \
   xdg-utils \
+  libdrm2 \
+  libgbm1 \
+  libxshmfence1 \
+  libglu1-mesa \
+  libpangocairo-1.0-0 \
+  libgtk-3-0 \
   --no-install-recommends && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Etapa 3: Criar diretório de trabalho
 WORKDIR /app
-
-# Etapa 4: Copiar arquivos do projeto
 COPY . .
 
-# Etapa 5: Instalar dependências do Node.js
+# Agora sim instala as dependências sem baixar o Chromium
 RUN npm install
 
-# Etapa 6: Definir ambiente
-ENV NODE_ENV=production
-
-# Etapa 7: Expor a porta da aplicação
 EXPOSE 3000
-
-# Etapa 8: Iniciar a aplicação
 CMD ["npm", "start"]
