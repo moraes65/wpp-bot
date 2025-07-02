@@ -1,13 +1,12 @@
-# Dockerfile completo e funcional
 FROM node:18-bullseye
 
+# Define variáveis para o Puppeteer
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV NODE_ENV=production
 
-# Instala dependências do Chromium
+# Instala o Chromium e dependências necessárias
 RUN apt-get update && apt-get install -y \
-  wget \
-  ca-certificates \
+  chromium \
   fonts-liberation \
   libappindicator3-1 \
   libasound2 \
@@ -29,14 +28,24 @@ RUN apt-get update && apt-get install -y \
   libglu1-mesa \
   libpangocairo-1.0-0 \
   libgtk-3-0 \
+  chromium-driver \
   --no-install-recommends && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Define caminho do navegador para o Puppeteer
+ENV CHROME_PATH=/usr/bin/chromium
+
+# Define diretório de trabalho
 WORKDIR /app
+
+# Copia os arquivos do projeto
 COPY . .
 
-# Agora sim instala as dependências sem baixar o Chromium
+# Instala as dependências Node.js
 RUN npm install
 
+# Expor a porta do app
 EXPOSE 3000
+
+# Inicializa a aplicação
 CMD ["npm", "start"]
