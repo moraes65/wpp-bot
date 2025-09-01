@@ -1,3 +1,4 @@
+// services/WhatsAppService.js
 import pkg from 'whatsapp-web.js';
 const { Client, LocalAuth } = pkg;
 import qrcode from 'qrcode-terminal';
@@ -16,7 +17,7 @@ function initializeClient() {
 	});
 
 	client.on('authenticated', () => {
-		console.log('✅ AUTHENTICATED');
+		console.log('✅ AUTHENTICATED..');
 	});
 
 	client.on('auth_failure', () => {
@@ -69,19 +70,18 @@ function initializeClient() {
 				'Obrigado por confirmar!\nSe desejar mais informações, clique aqui: https://api.whatsapp.com/send?phone=5514998974587&text=Atendimento%20ICM'
 			);
 
-			// Persiste confirmação no banco
 			try {
 				await database.connection.query(
 					`UPDATE dbo.SMS_SEND 
-			 SET confirmed_at = GETDATE(), 
-			     status = 'C', 
-			     message_received = :msg
-			 WHERE id = (
-			       SELECT TOP 1 id 
-			       FROM dbo.SMS_SEND 
-			       WHERE recipient LIKE :recipient AND status = 'S'
-			       ORDER BY id DESC
-			);`,
+					 SET confirmed_at = GETDATE(), 
+					     status = 'C', 
+					     message_received = :msg
+					 WHERE id = (
+					       SELECT TOP 1 id 
+					       FROM dbo.SMS_SEND 
+					       WHERE recipient LIKE :recipient AND status = 'S'
+					       ORDER BY id DESC
+					);`,
 					{
 						replacements: {
 							recipient: `%${cleanNumber}%`,
@@ -99,22 +99,21 @@ function initializeClient() {
 				'Tudo bem! Se desejar atendimento da recepção, clique aqui: https://api.whatsapp.com/send?phone=5514998974587&text=Atendimento%20ICM.\nSe mudar de ideia, é só responder *SIM*.'
 			);
 
-			// Registra como recusado
 			try {
 				await database.connection.query(
 					`UPDATE dbo.SMS_SEND 
-				SET confirmed_at = GETDATE(), 
-						status = 'R', 
-						message_received = :msg
-				WHERE id = (
-						SELECT TOP 1 id 
-						FROM dbo.SMS_SEND 
-						WHERE recipient LIKE :recipient AND status = 'S'
-						ORDER BY id DESC
-				);`,
+						SET confirmed_at = GETDATE(), 
+								status = 'R', 
+								message_received = :msg
+						WHERE id = (
+								SELECT TOP 1 id 
+								FROM dbo.SMS_SEND 
+								WHERE recipient LIKE :recipient AND status = 'S'
+								ORDER BY id DESC
+						);`,
 					{
 						replacements: {
-							recipient: '%' + cleanNumber + '%',
+							recipient: `%${cleanNumber}%`,
 							msg: JSON.stringify(msg),
 						},
 						type: database.connection.QueryTypes.UPDATE,
@@ -135,14 +134,15 @@ function initializeClient() {
 		}
 	});
 
-	client.on('disconnected', async (reason) => {
+	client.on('disconnected', (reason) => {
 		console.warn('⚠️ WhatsApp Client disconnected. Reason:', reason);
 		console.log('🔁 Tentando reconectar em 5 segundos...');
 		setTimeout(() => {
-			initializeClient();
-			client.initialize();
+			initializeClient(); // já reinicializa aqui
 		}, 5000);
 	});
+
+	client.initialize(); // 🚀 inicialização centralizada aqui
 }
 
 initializeClient();
