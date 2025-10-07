@@ -38,7 +38,6 @@ export default async function sendMessageJob(client) {
 			// Adiciona DDI 55 se não tiver
 			const fullNumber = raw.length === 11 ? `55${raw}` : raw;
 
-			
 			const isValidPhone = fullNumber && /^55\d{10,11}$/.test(fullNumber);
 
 			if (!isValidPhone) {
@@ -53,7 +52,6 @@ export default async function sendMessageJob(client) {
 				console.warn(`⚠️ Número não encontrado no WhatsApp: ${msg.recipient}`);
 				continue;
 			}
-
 
 			// const recipient = `${fullNumber}@c.us`;
 			const recipient = numberId._serialized;
@@ -82,6 +80,16 @@ export default async function sendMessageJob(client) {
 					`UPDATE SMS_SEND SET status = 'S' WHERE id = :id`,
 					{
 						replacements: { id: msg.id },
+						type: database.connection.QueryTypes.UPDATE,
+					}
+				);
+				// Atualiza o status de confirmação na tabela
+				await database.connection.query(
+					`UPDATE ARQ_AGENDA 
+					 SET STATUSCONFIRMA = 'Pendente' 
+					 WHERE CODAGENDA = :codAgenda`,
+					{
+						replacements: { codAgenda: msg.idRequest },
 						type: database.connection.QueryTypes.UPDATE,
 					}
 				);
