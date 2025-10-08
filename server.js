@@ -6,8 +6,25 @@ import app from './app.js';
 import sendMessageJob from './controllers/MessageController.js';
 import client from './services/WhatsAppService.js';
 import schedulerService from './services/SchedulerService.js';
+import puppeteer from 'puppeteer';
+
+/* const browser = await puppeteer.launch({
+	headless: true,
+	args: ['--no-sandbox', '--disable-setuid-sandbox'],
+});
+
+console.log('✅ Puppeteer iniciado!');
+await browser.close(); */
 
 const PORT = process.env.PORT || 3009;
+
+// Verifica se o client foi inicializado corretamente
+if (!client) {
+	console.error('❌ Erro: WhatsApp Client não foi inicializado corretamente.');
+	process.exit(1);
+}
+
+// console.dir(client, { depth: 2 }); // mostra até 2 níveis
 
 // Inicia o scheduler de confirmações (08:00h diariamente)
 schedulerService.startConfirmationScheduler();

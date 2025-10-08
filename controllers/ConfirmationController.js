@@ -6,6 +6,14 @@ import database from '../database/connection.js';
  */
 export default async function sendConfirmationJob() {
 	console.log('🚀 [CONFIRMAÇÃO] Iniciando envio de confirmações...');
+	function formatarHora(hrAgenda) {
+		let ao_hora = String(hrAgenda);
+		if (ao_hora.length < 4) {
+			ao_hora = `0${ao_hora}`;
+		}
+		ao_hora = ao_hora.replace(/(\d{2})(\d{2})$/, '$1:$2'); // Coloca um hífen entre o terceiro e o quarto dígitos
+		return ao_hora;
+	}
 
 	try {
 		// Calcula as datas: hoje e amanhã
@@ -35,6 +43,7 @@ export default async function sendConfirmationJob() {
         AND (SITUACAO = 'Marcada' OR SITUACAO = 'Agendada')
 				AND CELULARPAC IS NOT NULL
         AND CODPAC <> 1
+				AND CODMED = 1981
 				AND (STATUSCONFIRMA IS NULL OR STATUSCONFIRMA = '')
 			ORDER BY DATAAGENDA, HORARIO`,
 			{
@@ -96,26 +105,25 @@ export default async function sendConfirmationJob() {
 				// Formata data e hora
 				const dataAgenda = new Date(agenda.DATAAGENDA);
 				const dataFormatada = dataAgenda.toLocaleDateString('pt-BR');
-				const horaFormatada = agenda.HORARIO || agenda.HORAAGENDA;
+				const horaFormatada = formatarHora(agenda.HORARIO);
+				console.log(`⏰ Hora formatada: ${horaFormatada}`);
 
 				// Monta a mensagem de confirmação
-				const mensagem = `[❤️ ICM Marília ❤️]
-Olá, ${agenda.NOMEPAC}! 👋
-📌 *Protocolo:* ICM-${agenda.CODAGENDA}
-👨‍⚕️ *Médico:* ${agenda.NOMEMED}
-🏥 *Convênio:* ${agenda.CONVENIO}
-📝 *Procedimento:* ${agenda.PROCEDIMENTO}
-📅 *Data:* ${dataFormatada} às ⏰ ${horaFormatada}.
-📍 *Local:* Instituto do Coração de Marília - ICM.
-📍 *Endereço:* Av. Vicente Ferreira 780 – ao lado do P.S. da Santa Casa.
-⚠️ *Chegar com 15 minutos de antecedência.*
-🔗 *Mais informações:* www.icm.com.br
+				const mensagem = `[ICM Marília]
+CONFIRMAÇÃO DE AGENDAMENTO
 
-Por favor, confirme sua presença respondendo:
-✅ *SIM* - para confirmar
-❌ *NÃO* - para cancelar
+Olá ${agenda.NOMEPAC},
+você tem um atendimento agendado conosco e gostaríamos de confirmar sua presença:
 
-Aguardamos sua confirmação! 😊`;
+*Procedimento:* ${agenda.PROCEDIMENTO}
+*Data:* ${dataFormatada} 
+*Horário:* ${horaFormatada}
+*Médico:* ${agenda.NOMEMED}
+*Convênio:* ${agenda.CONVENIO}
+*Local:* Instituto do Coração de Marília - ICM.
+*Endereço:* Av. Vicente Ferreira 780 – ao lado do P.S. da Santa Casa.
+*Chegar com 15 minutos de antecedência.*
+*Mais informações:* www.icm.com.br`;
 				// Envia a mensagem
 				// await client.sendMessage(recipient, mensagem);
 
@@ -157,7 +165,7 @@ Aguardamos sua confirmação! 😊`;
 
 				// Delay entre mensagens para evitar bloqueio
 				const delayMin = parseInt(process.env.DELAY_MIN_MS) || 5000;
-				let delayMax = parseInt(process.env.DELAY_MAX_MS) || 10000;
+				let delayMax = parseInt(process.env.DELAY_MAX_MS) || 8000;
 				if (delayMax < delayMin) delayMax = delayMin + 1000;
 
 				const delay =

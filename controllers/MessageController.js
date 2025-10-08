@@ -1,21 +1,29 @@
 import database from '../database/connection.js';
 
-const mensagensEngajamento = [
-	'❤️ ICM Marília ❤️ - 👋 Olá! Gostaria de receber lembretes dos seus agendamentos pelo WhatsApp?\n🔒 Responda *SIM* para ativar com segurança.',
-	'📅 Oi! Podemos te lembrar dos seus agendamentos e horários pelo WhatsApp?\n📲 Responda *SIM* para ativar. - ❤️ ICM Marília ❤️',
-	'❤️ ICM Marília ❤️ - ⏰ E aí! Quer receber notificações de agendamentos e horários de atendimento?\n✉️ Responda *SIM* para ativar.',
-	'🏥 Olá! Deseja receber avisos sobre suas consultas agendadas diretamente no WhatsApp?\n🤝 Responda *SIM* para ativar. - ❤️ ICM Marília ❤️',
-	'⚡ Quer ser lembrado do seu agendamento com antecedência pelo WhatsApp?\n🛡️ É só confirmar aqui!\n✅ Responda *SIM*. - ❤️ ICM Marília ❤️',
-	'❤️ ICM Marília ❤️ - 📢 Oi! Podemos te avisar sobre novos horários disponíveis para consultas?\n📆 Responda *SIM* para ativar.',
-	'📌 Gostaria de receber lembretes dos seus agendamentos médicos pelo WhatsApp?\n💡 Responda *SIM* para ativar! - ❤️ ICM Marília ❤️',
-	'❤️ ICM Marília ❤️ - 📲 Quer receber notificações quando seu agendamento estiver confirmado?\n📥 Responda *SIM* para ativar.',
-	'💬 Oi! Você prefere receber lembretes dos seus horários agendados por aqui?\n📞 Só responder *SIM*! - ❤️ ICM Marília ❤️',
-	'❤️ ICM Marília ❤️ - ⏳ Quer evitar esquecimentos? Receba lembretes dos seus agendamentos via WhatsApp.\n✅ Responda *SIM* para ativar.',
-	'🔔 Olá! Podemos te lembrar dos seus compromissos com o ICM pelo WhatsApp?\n📱 Responda *SIM* para ativar. - ❤️ ICM Marília ❤️',
-	'❤️ ICM Marília ❤️ - 👩‍⚕️ Oi! Para continuar recebendo lembretes de agendamento, responda:\n🆗 *SIM* para ativar.',
-	'🤖 Quer receber lembretes automáticos das suas consultas agendadas?\n📨 Digite *SIM* para ativar. - ❤️ ICM Marília ❤️',
-	'❤️ ICM Marília ❤️ - 🔍 Podemos te avisar sempre que houver um novo agendamento confirmado?\n📧 Digite *SIM* para ativar.',
-];
+/* const mensagensEngajamento = [
+	'ICM Marília - Olá! Gostaria de receber lembretes dos seus agendamentos pelo WhatsApp?\nResponda *SIM* para ativar com segurança.',
+	'Oi! Podemos te lembrar dos seus agendamentos e horários pelo WhatsApp?\nResponda *SIM* para ativar. - ICM Marília',
+	'ICM Marília - E aí! Quer receber notificações de agendamentos e horários de atendimento?\nResponda *SIM* para ativar.',
+	'Olá! Deseja receber avisos sobre suas consultas agendadas diretamente no WhatsApp?\nResponda *SIM* para ativar. - ICM Marília',
+	'Quer ser lembrado do seu agendamento com antecedência pelo WhatsApp?\nÉ só confirmar aqui!\nResponda *SIM*. - ICM Marília',
+	'ICM Marília - Oi! Podemos te avisar sobre novos horários disponíveis para consultas?\nResponda *SIM* para ativar.',
+	'Gostaria de receber lembretes dos seus agendamentos médicos pelo WhatsApp?\nResponda *SIM* para ativar! - ICM Marília',
+	'ICM Marília - Quer receber notificações quando seu agendamento estiver confirmado?\nResponda *SIM* para ativar.',
+	'Oi! Você prefere receber lembretes dos seus horários agendados por aqui?\nSó responder *SIM*! - ICM Marília',
+	'ICM Marília - Quer evitar esquecimentos? Receba lembretes dos seus agendamentos via WhatsApp.\nResponda *SIM* para ativar.',
+	'Olá! Podemos te lembrar dos seus compromissos com o ICM pelo WhatsApp?\nResponda *SIM* para ativar. - ICM Marília',
+	'ICM Marília - Oi! Para continuar recebendo lembretes de agendamento, responda:\n*SIM* para ativar.',
+	'Quer receber lembretes automáticos das suas consultas agendadas?\nDigite *SIM* para ativar. - ICM Marília',
+	'ICM Marília - Podemos te avisar sempre que houver um novo agendamento confirmado?\nDigite *SIM* para ativar.',
+]; */
+
+const mensagemConfirmacao = `*Por favor, confirme sua presença:*
+
+1️⃣ *Confirmar*  
+2️⃣ *Cancelar*  
+3️⃣ *Reagendar*  
+
+Aguardamos sua confirmação!`;
 
 export default async function sendMessageJob(client) {
 	console.log('🚀 Iniciando envio de mensagens...');
@@ -56,15 +64,21 @@ export default async function sendMessageJob(client) {
 			// const recipient = `${fullNumber}@c.us`;
 			const recipient = numberId._serialized;
 
-			const engajamento =
+			/* const engajamento =
 				mensagensEngajamento[
 					Math.floor(Math.random() * mensagensEngajamento.length)
-				];
+				]; */
 
 			try {
-				await client.sendMessage(recipient, engajamento);
-
-				await client.sendMessage(recipient, msg.text);
+				// await client.sendMessage(recipient, engajamento);
+				// aguarda 2 segundos antes de enviar a principal
+				setTimeout(async () => {
+					await client.sendMessage(recipient, msg.text);
+				}, 2000);
+				// aguarda 2 segundos antes de enviar a confirmação
+				setTimeout(async () => {
+					await client.sendMessage(recipient, mensagemConfirmacao);
+				}, 2000);
 
 				const delayMin = parseInt(process.env.DELAY_MIN_MS) || 15000;
 				let delayMax = parseInt(process.env.DELAY_MAX_MS) || 40000;

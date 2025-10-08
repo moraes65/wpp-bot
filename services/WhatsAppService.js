@@ -3,14 +3,36 @@ import pkg from 'whatsapp-web.js';
 const { Client, LocalAuth } = pkg;
 import qrcode from 'qrcode-terminal';
 import database from '../database/connection.js';
-import { detectIntent } from '../middleware/intentDetector.js';
 
 let client;
+console.log('🔄 Inicializando WhatsApp Client...');
 
 function initializeClient() {
-	client = new Client({
+	/* 	client = new Client({
 		authStrategy: new LocalAuth(),
 		puppeteer: { headless: true },
+	}); */
+
+	client = new Client({
+		authStrategy: new LocalAuth({
+			dataPath: './.wwebjs_auth',
+		}),
+		puppeteer: {
+			headless: true,
+			// args: ['--no-sandbox', '--disable-setuid-sandbox'],
+			// executablePath: '/usr/bin/google-chrome', // caminho customizado, se necessário
+			// userDataDir: './.chrome_data', // se quiser um perfil customizado
+			// defaultViewport: null, // para usar o tamanho da janela do sistema
+			// ignoreDefaultArgs: ['--disable-extensions'], // se precisar de algo específico
+			// slowMo: 20, // diminui a velocidade para visualização (útil para debug)
+			// devtools: true, // abre o devtools junto com o navegador
+			// args: ['--window-size=1920,1080'], // define o tamanho da janela
+			// executablePath: puppeteer.executablePath(), // caminho do executável do puppeteer
+		},
+	});
+
+	client.on('loading_screen', (percent, message) => {
+		console.log(`⏳ Carregando ${percent}% - ${message}`);
 	});
 
 	client.on('qr', (qr) => {
@@ -33,13 +55,56 @@ function initializeClient() {
 		if (!msg.body?.trim()) return;
 
 		const cleanNumber = msg.from.replace(/\D/g, '');
+		const body = msg.body.trim().toLowerCase();
 
-		const intencao = await detectIntent(msg);
+		/* 		const intencao = await detectIntent(msg);
 		console.log(
 			`🤖 [INTENÇÃO] Detectada: ${intencao} para a mensagem: "${msg.body}"`
-		);
+		); */
 
-		if (intencao === 'confirmacao') {
+		const confirmacoes = [
+			'sim',
+			'sim.',
+			'ok',
+			'ok.',
+			'claro',
+			'com certeza',
+			'positivo',
+			'confirmado',
+			'confirmo',
+			'1',
+		];
+		const recusas = [
+			'não',
+			'nao',
+			'não quero',
+			'nao quero',
+			'pare',
+			'cancelar',
+			'sair',
+			'não desejo',
+			'nao desejo',
+			'2',
+		];
+		const reagendar = [
+			'reagendar',
+			'reagenda',
+			'quero reagendar',
+			'3',
+			'remarcar',
+			'remarca',
+			'quero remarcar',
+		];
+		const interesse = [
+			'talvez',
+			'quem sabe',
+			'me explica',
+			'explica melhor',
+			'qual o objetivo?',
+			'o que é isso?',
+		];
+
+		if (confirmacoes.includes(body)) {
 			await msg.reply(
 				'Obrigado por confirmar!\nSe desejar mais informações, clique aqui: https://api.whatsapp.com/send?phone=5514998974587&text=Atendimento%20ICM'
 			);
@@ -96,7 +161,7 @@ function initializeClient() {
 			} catch (err) {
 				console.error('❌ Erro ao atualizar confirmação:', err);
 			}
-		} else if (intencao === 'recusa') {
+		} else if (recusas.includes(body)) {
 			await msg.reply(
 				'Tudo bem! Se desejar atendimento da recepção, clique aqui: https://api.whatsapp.com/send?phone=5514998974587&text=Atendimento%20ICM.\nSe mudar de ideia, é só responder *SIM*.'
 			);
@@ -125,7 +190,36 @@ function initializeClient() {
 			} catch (err) {
 				console.error('❌ Erro ao registrar recusa:', err);
 			}
-		} else if (intencao === 'interesse') {
+		} else if (reagendar.includes(body)) {
+			await msg.reply(
+				'Sem problemas! Se quiser reagendar seu horário ou falar com a recepção, clique aqui: https://api.whatsapp.com/send?phone=5514998974587&text=Solicito%20atendimento%20para%20reagendar-%20ICM\n\nSe mudar de ideia, é só responder *SIM*. 😊'
+			);
+
+			try {
+				await database.connection.query(
+					`UPDATE dbo.SMS_SEND 
+						SET confirmed_at = GETDATE(), 
+								status = 'A', 
+								message_received = :msg
+						WHERE id = (
+								SELECT TOP 1 id 
+								FROM dbo.SMS_SEND 
+								WHERE recipient LIKE :recipient AND status = 'S'
+								ORDER BY id DESC
+						);`,
+					{
+						replacements: {
+							recipient: `%${cleanNumber}%`,
+							msg: JSON.stringify(msg),
+						},
+						type: database.connection.QueryTypes.UPDATE,
+					}
+				);
+				console.log(`⚠️ Recusa registrada no DB para ${cleanNumber}`);
+			} catch (err) {
+				console.error('❌ Erro ao registrar recusa:', err);
+			}
+		} else if (interesse.includes(body)) {
 			await msg.reply(
 				'Claro! Estamos aqui para tirar todas as suas dúvidas. 😊\nSe desejar atendimento, clique aqui: https://api.whatsapp.com/send?phone=5514998974587&text=Atendimento%20ICM'
 			);
@@ -154,7 +248,7 @@ function initializeClient() {
 			} catch (err) {
 				console.error('❌ Erro ao registrar interesse:', err);
 			}
-		} else if (intencao === 'indefinido') {
+		} else {
 			try {
 				await database.connection.query(
 					`UPDATE dbo.SMS_SEND 
@@ -190,7 +284,7 @@ function initializeClient() {
 		}, 5000);
 	});
 
-	client.initialize(); // 🚀 inicialização centralizada aqui
+	client.initialize().catch(console.error); // 🚀 inicialização centralizada aqui
 }
 
 initializeClient();

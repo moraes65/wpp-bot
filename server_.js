@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import app from './app.js';
-import sendMessageJob from './controllers/MessageController.js';
+// import sendMessageJob from './controllers/MessageController.js';
 // import client from './services/WhatsAppService.js';
 import schedulerService from './services/SchedulerService.js';
 

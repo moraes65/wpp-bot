@@ -13,14 +13,14 @@ class SchedulerService {
 	 */
 	startConfirmationScheduler() {
 		console.log(
-			'⏰ [SCHEDULER] Iniciando agendamento de confirmações diárias às 08:00h...'
+			'⏰ [SCHEDULER] Iniciando agendamento de confirmações diárias às 19:00h...'
 		);
 		// Executa todos os dias às 08:00h (horário de Brasília)
 		// Formato: segundo minuto hora dia mês dia-da-semana
 		const confirmationJob = cron.schedule(
-			'46 00 * * *', // 08:00 todos os dias
+			'03 20 * * *', // 19:00 todos os dias
 			async () => {
-				console.log('⏰ [SCHEDULER] Executando job de confirmação às 08:00h');
+				console.log('⏰ [SCHEDULER] Executando job de confirmação às 19:00h');
 				try {
 					await sendConfirmationJob(); // client
 					console.log(
@@ -42,11 +42,11 @@ class SchedulerService {
 		this.jobs.push({
 			name: 'Confirmação de Agendamentos',
 			job: confirmationJob,
-			schedule: '06:00 diariamente',
+			schedule: '19:00 diariamente',
 		});
 
 		console.log(
-			'📅 [SCHEDULER] Job de confirmação agendado para 06:00h diariamente'
+			'📅 [SCHEDULER] Job de confirmação agendado para 19:00h diariamente'
 		);
 	}
 
