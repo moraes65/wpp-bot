@@ -18,7 +18,7 @@ class SchedulerService {
 		// Executa todos os dias às 08:00h (horário de Brasília)
 		// Formato: segundo minuto hora dia mês dia-da-semana
 		const confirmationJob = cron.schedule(
-			'03 20 * * *', // 19:00 todos os dias
+			'00 06 * * *', // 19:00 todos os dias
 			async () => {
 				console.log('⏰ [SCHEDULER] Executando job de confirmação às 19:00h');
 				try {

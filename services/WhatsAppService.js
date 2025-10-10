@@ -8,27 +8,9 @@ let client;
 console.log('🔄 Inicializando WhatsApp Client...');
 
 function initializeClient() {
-	/* 	client = new Client({
+	client = new Client({
 		authStrategy: new LocalAuth(),
 		puppeteer: { headless: true },
-	}); */
-
-	client = new Client({
-		authStrategy: new LocalAuth({
-			dataPath: './.wwebjs_auth',
-		}),
-		puppeteer: {
-			headless: true,
-			// args: ['--no-sandbox', '--disable-setuid-sandbox'],
-			// executablePath: '/usr/bin/google-chrome', // caminho customizado, se necessário
-			// userDataDir: './.chrome_data', // se quiser um perfil customizado
-			// defaultViewport: null, // para usar o tamanho da janela do sistema
-			// ignoreDefaultArgs: ['--disable-extensions'], // se precisar de algo específico
-			// slowMo: 20, // diminui a velocidade para visualização (útil para debug)
-			// devtools: true, // abre o devtools junto com o navegador
-			// args: ['--window-size=1920,1080'], // define o tamanho da janela
-			// executablePath: puppeteer.executablePath(), // caminho do executável do puppeteer
-		},
 	});
 
 	client.on('loading_screen', (percent, message) => {
@@ -134,7 +116,7 @@ function initializeClient() {
 				await database.connection
 					.query(
 						`SELECT TOP 1 *  FROM dbo.SMS_SEND
-  						WHERE recipient = :recipient AND status IN ('S', 'C')
+  						WHERE recipient = :recipient AND status IN ('S', 'C', 'R', 'A')
   						ORDER BY id DESC `,
 						{
 							replacements: {
@@ -187,6 +169,35 @@ function initializeClient() {
 					}
 				);
 				console.log(`⚠️ Recusa registrada no DB para ${cleanNumber}`);
+				// console.log(`✔️ Confirmado em DB para ${cleanNumber}`);
+				// Atualiza o status de confirmação na tabela
+				await database.connection
+					.query(
+						`SELECT TOP 1 *  FROM dbo.SMS_SEND
+  						WHERE recipient = :recipient AND status IN ('S', 'R', 'C', 'A')
+  						ORDER BY id DESC `,
+						{
+							replacements: {
+								recipient: cleanNumber,
+								msg: JSON.stringify(msg),
+							},
+							type: database.connection.QueryTypes.UPDATE,
+						}
+					)
+					.then(async ([msg]) => {
+						if (msg && msg[0]?.idRequest) {
+							await database.connection.query(
+								`UPDATE ARQ_AGENDA 
+							 SET STATUSCONFIRMA = 'Recusada' 
+							 WHERE CODAGENDA = :codAgenda`,
+								{
+									replacements: { codAgenda: msg[0]?.idRequest },
+									type: database.connection.QueryTypes.UPDATE,
+								}
+							);
+							console.log(`✔️ Recusada na AGENDA para ${cleanNumber}`);
+						}
+					});
 			} catch (err) {
 				console.error('❌ Erro ao registrar recusa:', err);
 			}
@@ -215,7 +226,35 @@ function initializeClient() {
 						type: database.connection.QueryTypes.UPDATE,
 					}
 				);
-				console.log(`⚠️ Recusa registrada no DB para ${cleanNumber}`);
+				console.log(`⚠️ Reagendamento registrado no DB para ${cleanNumber}`);
+				// Atualiza o status de confirmação na tabela
+				await database.connection
+					.query(
+						`SELECT TOP 1 *  FROM dbo.SMS_SEND
+  						WHERE recipient = :recipient AND status IN ('S', 'A', 'R', 'C')
+  						ORDER BY id DESC `,
+						{
+							replacements: {
+								recipient: cleanNumber,
+								msg: JSON.stringify(msg),
+							},
+							type: database.connection.QueryTypes.UPDATE,
+						}
+					)
+					.then(async ([msg]) => {
+						if (msg && msg[0]?.idRequest) {
+							await database.connection.query(
+								`UPDATE ARQ_AGENDA 
+							 SET STATUSCONFIRMA = 'Reagendar' 
+							 WHERE CODAGENDA = :codAgenda`,
+								{
+									replacements: { codAgenda: msg[0]?.idRequest },
+									type: database.connection.QueryTypes.UPDATE,
+								}
+							);
+							console.log(`✔️ Reagendar na AGENDA para ${cleanNumber}`);
+						}
+					});
 			} catch (err) {
 				console.error('❌ Erro ao registrar recusa:', err);
 			}
@@ -281,7 +320,7 @@ function initializeClient() {
 		console.log('🔁 Tentando reconectar em 5 segundos...');
 		setTimeout(() => {
 			initializeClient(); // já reinicializa aqui
-		}, 5000);
+		}, 50000);
 	});
 
 	client.initialize().catch(console.error); // 🚀 inicialização centralizada aqui

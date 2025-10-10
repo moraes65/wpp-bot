@@ -17,11 +17,11 @@ import database from '../database/connection.js';
 	'ICM Marília - Podemos te avisar sempre que houver um novo agendamento confirmado?\nDigite *SIM* para ativar.',
 ]; */
 
-const mensagemConfirmacao = `*Por favor, confirme sua presença:*
+const mensagemConfirmacao = `*Por favor, confirme sua presença. Digite:*
 
-1️⃣ *Confirmar*  
-2️⃣ *Cancelar*  
-3️⃣ *Reagendar*  
+1️⃣ para *Confirmar*  
+2️⃣ para *Cancelar*  
+3️⃣ para *Reagendar*  
 
 Aguardamos sua confirmação!`;
 
@@ -61,24 +61,14 @@ export default async function sendMessageJob(client) {
 				continue;
 			}
 
-			// const recipient = `${fullNumber}@c.us`;
 			const recipient = numberId._serialized;
 
-			/* const engajamento =
-				mensagensEngajamento[
-					Math.floor(Math.random() * mensagensEngajamento.length)
-				]; */
-
 			try {
-				// await client.sendMessage(recipient, engajamento);
-				// aguarda 2 segundos antes de enviar a principal
-				setTimeout(async () => {
+				(async () => {
 					await client.sendMessage(recipient, msg.text);
-				}, 2000);
-				// aguarda 2 segundos antes de enviar a confirmação
-				setTimeout(async () => {
+					await new Promise((r) => setTimeout(r, 2000));
 					await client.sendMessage(recipient, mensagemConfirmacao);
-				}, 2000);
+				})();
 
 				const delayMin = parseInt(process.env.DELAY_MIN_MS) || 15000;
 				let delayMax = parseInt(process.env.DELAY_MAX_MS) || 40000;

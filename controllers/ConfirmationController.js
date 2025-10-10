@@ -43,7 +43,6 @@ export default async function sendConfirmationJob() {
         AND (SITUACAO = 'Marcada' OR SITUACAO = 'Agendada')
 				AND CELULARPAC IS NOT NULL
         AND CODPAC <> 1
-				AND CODMED = 1981
 				AND (STATUSCONFIRMA IS NULL OR STATUSCONFIRMA = '')
 			ORDER BY DATAAGENDA, HORARIO`,
 			{
