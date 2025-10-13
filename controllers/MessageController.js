@@ -58,6 +58,23 @@ export default async function sendMessageJob(client) {
 			const numberId = await client.getNumberId(fullNumber);
 			if (!numberId) {
 				console.warn(`⚠️ Número não encontrado no WhatsApp: ${msg.recipient}`);
+				await database.connection.query(
+					`UPDATE SMS_SEND SET status = 'Q' WHERE id = :id`,
+					{
+						replacements: { id: msg.id },
+						type: database.connection.QueryTypes.UPDATE,
+					}
+				);
+				// Atualiza o status de confirmação na tabela
+				await database.connection.query(
+					`UPDATE ARQ_AGENDA 
+					 SET STATUSCONFIRMA = 'Invalido' 
+					 WHERE CODAGENDA = :codAgenda`,
+					{
+						replacements: { codAgenda: msg.idRequest },
+						type: database.connection.QueryTypes.UPDATE,
+					}
+				);
 				continue;
 			}
 
